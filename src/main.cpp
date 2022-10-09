@@ -32,7 +32,7 @@ File dataFile;
 
 void setup() {
     Serial.begin(9600);
-
+    Serial.println("hi");
     Serial.print("Initializing SD card...\n");
     // make sure that the default chip select pin is set to
     // output, even if you don't use it:
