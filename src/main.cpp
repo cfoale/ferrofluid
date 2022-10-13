@@ -8,9 +8,13 @@ const uint8_t kPinCapacitor = A7;           // Pin measuring capacitor voltage
 const uint8_t kPinChargeDischarge = 2;      // Pin controlling relay connecting Cap to bat or coils
 const uint8_t kPinCoilSwitch = 6;           // Pin controlling relay connecting coil 1 or 2
 const uint8_t kPinSensingCoil = A5;         // Pin measuring sensing coil voltage
-
+const uint8_t kPinSkip = 8;                 //cmf add 10/12/2022
 // Settings
-const float kCountsToVolts = 0.00488;       // Factor translating ADC counts to Volts; Vref/1024
+const float kCountsToVolts = 0.00488*0.60;  // Factor translating ADC counts to Volts; 
+// @Dan C, additional factor 0.61 is required with pin 18 AREF to pin 17 3V3 via 4.7k
+//and calling analogReference(EXTERNAL) in setup().  This makes AREF independent of voltage
+//changes on 5V supply line.
+
 const float kVmax = 2.3;                    // Maximum capacitor voltage
 const uint16_t kChargingInterval = 5000;    // Charge for [ms] before measuring voltage
 const uint16_t kDischargeCycleDelay = 100;  // Wait for [ms] after a measurement cycle
@@ -48,6 +52,9 @@ void setup() {
     pinMode(kPinCoilSwitch, OUTPUT);
     pinMode(kPinCapacitor, INPUT);
     pinMode(kPinSensingCoil, INPUT);
+    //cmf changes
+    pinMode(kPinSkip, INPUT);
+    analogReference(EXTERNAL);
 }
 
 void loop() {
@@ -84,8 +91,14 @@ float ChargeCapacitor(const float vmin, const unsigned int interval) {
             Serial.print(" V\n");
             return cap_volts;
         }
-
+        //cmf add
+        if(digitalRead(kPinSkip)) {
+            Serial.println("Exiting..");
+             delay(interval);
+            exit(0);
+        };
         delay(interval);
+
     }
     Serial.print("kMaxChargeCycles reached! Aborting charging at ");
     Serial.print(cap_volts);
