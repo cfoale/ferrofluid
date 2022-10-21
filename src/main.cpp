@@ -8,22 +8,25 @@ const uint8_t kPinCapacitor = A7;           // Pin measuring capacitor voltage
 const uint8_t kPinChargeDischarge = 2;      // Pin controlling relay connecting Cap to bat or coils
 const uint8_t kPinCoilSwitch = 6;           // Pin controlling relay connecting coil 1 or 2
 const uint8_t kPinSensingCoil = A5;         // Pin measuring sensing coil voltage
-const uint8_t kPinSkip = 8;                 //cmf add 10/12/2022
+const uint8_t kPinFinishLed = 4;            //cmf add 10/14/2022
+
 // Settings
-const float kCountsToVolts = 0.00488*0.60;  // Factor translating ADC counts to Volts; 
-// @Dan C, additional factor 0.61 is required with pin 18 AREF to pin 17 3V3 via 4.7k
+const float kCountsToVolts = 0.00488*0.88;  // Factor translating ADC counts to Volts; 
+// @Dan C, additional factor 0.585 is required with pin 18 AREF to pin 17 3V3 via 4.7k
 //and calling analogReference(EXTERNAL) in setup().  This makes AREF independent of voltage
 //changes on 5V supply line.
 
-const float kVmax = 2.3;                    // Maximum capacitor voltage
+const float kVmax = 2.3;                    // Maximum capacitor voltage to keep current < 2A
 const uint16_t kChargingInterval = 5000;    // Charge for [ms] before measuring voltage
-const uint16_t kDischargeCycleDelay = 100;  // Wait for [ms] after a measurement cycle
+const uint16_t kDischargeCycleDelay = 500;  // Wait for [ms] after a measurement cycle
 const uint16_t kDischargeTime = 1000;       // Discharge for a total of [ms]
 const uint16_t kMaxChargeCycles = 10000;    // Max number of charging cycles before giving up
 const uint16_t kResultsArrayLength = 30;    // Number of measurements
 const uint16_t kSensorDelay = 1200;         // time to wait before measuring sensor volts; [us]
 const uint16_t kSensorInterval = 1;         // Interval between measurements; [us]
 const uint16_t kTransientDelay = 10;        // Amount of [ms] to wait for transients to subside
+//cmf add
+int            kMaxMeasurements = 4;        //so we exit during ground test
 
 // change this to match your SD shield or module;
 //     Arduino Ethernet shield: pin 4
@@ -53,17 +56,23 @@ void setup() {
     pinMode(kPinCapacitor, INPUT);
     pinMode(kPinSensingCoil, INPUT);
     //cmf changes
-    pinMode(kPinSkip, INPUT);
-    analogReference(EXTERNAL);
+    pinMode(kPinFinishLed,OUTPUT);
+    digitalWrite(kPinFinishLed, LOW);
 }
 
 void loop() {
+  for(int i=0; i < kMaxMeasurements; i++){
     ChargeCapacitor(kVmax, kChargingInterval);
     float* results = Measure(coil1_active, kSensorDelay, kSensorInterval, kDischargeTime);
     // WriteResultsToSD(results);
     delay(kDischargeCycleDelay);
     delete[] results;
     coil1_active = !coil1_active;
+  }
+  digitalWrite(kPinFinishLed, HIGH);
+  Serial.println("Done..");
+  delay(1000);
+  exit(0);
 }
 
 /**
@@ -91,12 +100,6 @@ float ChargeCapacitor(const float vmin, const unsigned int interval) {
             Serial.print(" V\n");
             return cap_volts;
         }
-        //cmf add
-        if(digitalRead(kPinSkip)) {
-            Serial.println("Exiting..");
-             delay(interval);
-            exit(0);
-        };
         delay(interval);
 
     }
