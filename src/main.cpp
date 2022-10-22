@@ -5,8 +5,10 @@
 
 // Pins
 const uint8_t kPinCapacitor = A7;           // Pin measuring capacitor voltage
-const uint8_t kPinChargeDischarge = 2;      // Pin controlling relay connecting Cap to bat or coils
-const uint8_t kPinCoilSwitch = 6;           // Pin controlling relay connecting coil 1 or 2
+const uint8_t kPinChargeDischarge = 3;      //cmf - changed from D2 to D3 because of interference
+// Pin controlling relay connecting Cap to bat or coils
+const uint8_t kPinCoilSwitch = 9;           // cmf - changed from D6 because of holder interference
+//D9- Pin controlling relay connecting coil 1 or 2
 const uint8_t kPinSensingCoil = A5;         // Pin measuring sensing coil voltage
 const uint8_t kPinFinishLed = 4;            //cmf add 10/14/2022
 
