@@ -14,10 +14,6 @@ const uint8_t kPinFinishLed = 4;            //cmf add 10/14/2022
 
 // Settings
 const float kCountsToVolts = 0.00488*0.88;  // Factor translating ADC counts to Volts; 
-// @Dan C, additional factor 0.585 is required with pin 18 AREF to pin 17 3V3 via 4.7k
-//and calling analogReference(EXTERNAL) in setup().  This makes AREF independent of voltage
-//changes on 5V supply line.
-
 const float kVmax = 2.3;                    // Maximum capacitor voltage to keep current < 2A
 const uint16_t kChargingInterval = 5000;    // Charge for [ms] before measuring voltage
 const uint16_t kDischargeCycleDelay = 500;  // Wait for [ms] after a measurement cycle
