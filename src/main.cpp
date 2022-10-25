@@ -24,7 +24,7 @@ const uint16_t kSensorDelay = 1200;         // time to wait before measuring sen
 const uint16_t kSensorInterval = 1;         // Interval between measurements; [us]
 const uint16_t kTransientDelay = 10;        // Amount of [ms] to wait for relay to switch 
 //cmf add
-int            kMaxMeasurements =100;        //so we exit during ground test
+int            kMaxMeasurements =1000;        //so we exit during ground test
 const uint16_t kBurstDelay = 500;          //+ kDischargeCycleDelay = interval between burst discharges on the same coil
 const uint16_t kBurstNumber = 3;            //number of repetitive discharges on the same coil
 
