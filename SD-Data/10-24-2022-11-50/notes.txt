@@ -1,0 +1,3 @@
+11:50
+About to do system check without coils connected.  Last data here is from checks without relays, coils.
+Preceeding data was with coils and capacitor was an integrated perfboard check with flight coils.

@@ -13,18 +13,20 @@ const uint8_t kPinSensingCoil = A5;         // Pin measuring sensing coil voltag
 const uint8_t kPinFinishLed = 4;            //cmf add 10/14/2022
 
 // Settings
-const float kCountsToVolts = 0.00488*0.88;  // Factor translating ADC counts to Volts; 
-const float kVmax = 2.3;                    // Maximum capacitor voltage to keep current < 2A
+const float kCountsToVolts = 0.00488*0.80;  // Factor translating ADC counts to Volts; 
+const float kVmax = 2.3;                   // Maximum capacitor voltage to keep current < 2A
 const uint16_t kChargingInterval = 5000;    // Charge for [ms] before measuring voltage
 const uint16_t kDischargeCycleDelay = 500;  // Wait for [ms] after a measurement cycle
 const uint16_t kDischargeTime = 1000;       // Discharge for a total of [ms]
 const uint16_t kMaxChargeCycles = 10000;    // Max number of charging cycles before giving up
-const uint16_t kResultsArrayLength = 30;    // Number of measurements
+const uint16_t kResultsArrayLength = 30;    //  - Number of measurements
 const uint16_t kSensorDelay = 1200;         // time to wait before measuring sensor volts; [us]
 const uint16_t kSensorInterval = 1;         // Interval between measurements; [us]
-const uint16_t kTransientDelay = 10;        // Amount of [ms] to wait for transients to subside
+const uint16_t kTransientDelay = 10;        // Amount of [ms] to wait for relay to switch 
 //cmf add
-int            kMaxMeasurements = 4;        //so we exit during ground test
+int            kMaxMeasurements =100;        //so we exit during ground test
+const uint16_t kBurstDelay = 500;          //+ kDischargeCycleDelay = interval between burst discharges on the same coil
+const uint16_t kBurstNumber = 3;            //number of repetitive discharges on the same coil
 
 // change this to match your SD shield or module;
 //     Arduino Ethernet shield: pin 4
@@ -34,6 +36,7 @@ const uint8_t chipSelect = 10;
 
 bool coil1_active = true;                   // Specifies which coil should be used for discharge
 File dataFile;
+float CapacitorVoltsAtDischarge = 0.0;            //to be output to file, with measurements
 
 void setup() {
     Serial.begin(9600);
@@ -59,12 +62,15 @@ void setup() {
 }
 
 void loop() {
-  for(int i=0; i < kMaxMeasurements; i++){
-    ChargeCapacitor(kVmax, kChargingInterval);
-    float* results = Measure(coil1_active, kSensorDelay, kSensorInterval, kDischargeTime);
-    // WriteResultsToSD(results);
+  for(uint16_t i=0; i < kMaxMeasurements; i++){
+    CapacitorVoltsAtDischarge = ChargeCapacitor(kVmax, kChargingInterval);
+    for(uint16_t j=0;j< kBurstNumber;j++){
+        float* results = Measure(coil1_active, kSensorDelay, kSensorInterval, kDischargeTime);
+        delay(kBurstDelay);
+        delete[] results;
+        CapacitorVoltsAtDischarge = analogRead(kPinCapacitor) * kCountsToVolts;
+    }
     delay(kDischargeCycleDelay);
-    delete[] results;
     coil1_active = !coil1_active;
   }
   digitalWrite(kPinFinishLed, HIGH);
@@ -146,7 +152,19 @@ float* Measure(const bool coil1_active, const unsigned int initial_delay,
     digitalWrite(kPinChargeDischarge, LOW);
     digitalWrite(kPinCoilSwitch, LOW);  // always turn off relays to reduce current (56mA)
 
-    Serial.print("Results: ");
+    Serial.print("Results at ");
+    Serial.print(millis());
+    Serial.print(" : coil ");
+    int nCoil = 1;
+    if(coil1_active)
+        nCoil = 1;
+    else
+        nCoil = 2;
+
+    Serial.print(nCoil);
+    Serial.print(" : Cap Volts ");
+    Serial.print(CapacitorVoltsAtDischarge, 4);
+    Serial.print(" : ");
     for (uint16_t j = 0; j < kResultsArrayLength; j++) {
         Serial.print(results[j], 4);
         Serial.print(" ");
@@ -156,6 +174,11 @@ float* Measure(const bool coil1_active, const unsigned int initial_delay,
     File dataFile = SD.open("data.csv", FILE_WRITE);
     if (dataFile) {
         dataFile.print(millis());
+        dataFile.print(",");
+        dataFile.print(nCoil);
+        dataFile.print(",");
+        dataFile.print(CapacitorVoltsAtDischarge,4);
+        dataFile.print(",");
         for (uint16_t j = 0; j < kResultsArrayLength; j++) {
             dataFile.print(results[j], 4);
             if (j < kResultsArrayLength - 1) {

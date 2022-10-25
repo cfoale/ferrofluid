@@ -1,0 +1,3 @@
+full no fluid control check, 4.7V supply. 2.3V max.  Ferrites in.
+data.csv has millis first, then results array.
+No coil information provided.
