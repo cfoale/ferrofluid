@@ -24,8 +24,9 @@ const uint16_t kSensorDelay = 1200;         // time to wait before measuring sen
 const uint16_t kSensorInterval = 1;         // Interval between measurements; [us]
 const uint16_t kTransientDelay = 10;        // Amount of [ms] to wait for relay to switch 
 //cmf add
-int            kMaxMeasurements =1000;        //so we exit during ground test
-const uint16_t kBurstDelay = 500;          //+ kDischargeCycleDelay = interval between burst discharges on the same coil
+int32_t kMaxMeasurements = 1000000;         //set low to exit during ground test
+                    //set high to ensure battery depletion. 1 minute every burst measurement
+const uint16_t kBurstDelay = 500;          // interval between burst discharges on the same coil
 const uint16_t kBurstNumber = 3;            //number of repetitive discharges on the same coil
 
 // change this to match your SD shield or module;
@@ -62,7 +63,7 @@ void setup() {
 }
 
 void loop() {
-  for(uint16_t i=0; i < kMaxMeasurements; i++){
+  for(int32_t i=0; i < kMaxMeasurements; i++){
     CapacitorVoltsAtDischarge = ChargeCapacitor(kVmax, kChargingInterval);
     for(uint16_t j=0;j< kBurstNumber;j++){
         float* results = Measure(coil1_active, kSensorDelay, kSensorInterval, kDischargeTime);
